@@ -1,16 +1,25 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { RestApi, LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as path from 'path';
 
 export class CdkDemoStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const getLunchSpotsLambda = new NodejsFunction(this, 'getLunchSpots', {
+      handler: 'handler',
+      entry: path.join(__dirname, '/../lambdas/getLunchSpots.ts'),
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'CdkDemoQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const getLunchSpotsIntegration = new LambdaIntegration(getLunchSpotsLambda);
+
+    const api = new RestApi(this, 'sohoLunchSpots', {
+      restApiName: 'Soho Lunch Spots',
+    });
+
+    const lunchSpots = api.root.addResource('lunch-spots');
+    lunchSpots.addMethod('GET', getLunchSpotsIntegration);
   }
 }
